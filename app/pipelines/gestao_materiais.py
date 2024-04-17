@@ -35,7 +35,7 @@ def newsteel():
     print("Os seguintes arquivos não puderam ser lidos de forma correta:\n")
     print(df_error)
     df_error.to_excel(os.path.join(output_dir, 'erros_found.xlsx'), index=False)
-    print(df_lx.loc[df_lx.supplier.str.contains("DELTADUCON")])
+    # print(df_lx.loc[df_lx.supplier.str.contains("DELTADUCON")])
     df_suppliers = pd.concat([df_aumond, df_fam_mining, df_fam_structure])
     df_suppliers = df_suppliers.sort_values(by='data_termino', ascending=True).drop_duplicates(subset='cwp' ,keep='last')
 
@@ -58,12 +58,13 @@ def newsteel():
     )
     df_main = pd.merge(
         left=df_main,
-        right=df_lx[['cwp', 'tag', 'supplier', 'qtd_lx', 'peso_un_lx']],
+        right=df_lx[['cwp', 'tag', 'cod_ativo', 'supplier', 'qtd_lx', 'peso_un_lx']],
         on='cwp',
         how='outer',
         suffixes=(None, '_lx')
     )
-    print(df_main.loc[df_main.supplier.str.contains("DELTADUCON", na=False), ["cwp", "tag", "qtd_lx"]])
+    print(df_main.columns)
+    # print(df_main.loc[df_main.supplier.str.contains("DELTADUCON", na=False), ["cwp", "tag", "qtd_lx"]])
     df_main = pd.merge(
         left=df_main,
         right=reports.df_desenho,
@@ -71,17 +72,24 @@ def newsteel():
         how='outer',
         suffixes=('_lx', '_desenho')
     )  
+
+    
+
+    print(df_main.columns)
+
     df_main = pipeline_tools._get_quantities(df_main, reports.df_recebimento)
     df_main = pd.merge(
         df_main,
-        reports.df_recebimento[['tag', 'peso_un_recebimento', 'fornecedor']],
+        reports.df_recebimento[['tag', 'peso_un_recebimento', 'fornecedor', 'descricao']],
         on='tag',
         how='left',
         suffixes=(None, '_recebimento')
     )
     df_main['supplier'] = df_main['supplier'].fillna(df_main['fornecedor'])
     
-
+    print(df_main.columns)
+    
+    df_main['descricao'] = df_main['descricao_lx'].fillna(df_main['descricao']).fillna(df_main['descricao_desenho'])
     # df_main.loc[df_main['peso_un_recebimento'].isna(), 'peso_un'] = df_main['peso_un_desenho']
     # df_main.loc[df_main['peso_un'].isna(), 'peso_un'] = df_main['peso_un_recebimento'] 
 
@@ -124,15 +132,17 @@ def capanema():
     lx_sinosteel._run_pipeline()
     df_lx_sinosteel = lx_sinosteel.df_lx   
     df_lx_sinosteel['supplier'] = 'SINOSTEEL'
+    
     lx._run_pipeline()
-    df_error = lx.df_errors
-    print(df_error)
-
     df_lx = lx.df_lx
+    df_error = lx.df_errors
+    print("Os seguintes arquivos não puderam ser lidos de forma correta:\n")
+    print(df_error)
+    df_error.to_excel(os.path.join(output_dir, 'erros_found.xlsx'), index=False)
+
     df_lx = df_lx.loc[df_lx['supplier'] != 'SINOSTEEL']
     # verificação se o material existe ou não
     df_lx = pd.concat([df_lx, df_lx_sinosteel])
-    print(df_lx.loc[df_lx['tag'].str.contains("1360CF-00211A", na=False), ['cwp', 'tag', 'qtd_lx']])
     memoria_calculo._clean_report()
     df_memoria = memoria_calculo.report
     df_demontagem = memoria_calculo.cwp_desmontagem
@@ -233,6 +243,7 @@ def _get_view(df_view, output_path):
         'data_termino_fornecedor',
         'prontidao',
         'data_inicio_masterplan',
+        'descricao'
     ]]
     df_view_cwp = pd.merge(
         df_view_cwp.groupby(['cwp', 'supplier'], as_index=False).sum(),
@@ -277,7 +288,7 @@ def _get_view(df_view, output_path):
         'peso_recebido',
         'qtd_desenho',
         'qtd_recebida',
-        'descricao_desenho',
+        'descricao',
     ]].dropna(subset=['tag'])
     
     df_view_tag = df_view_tag.rename(columns={
@@ -291,7 +302,7 @@ def _get_view(df_view, output_path):
         'qtd_desenho': 'Qtd. Materials',
         'peso_recebido': 'Recebido (t)',
         'qtd_recebida': 'Qtd. Recebimento',
-        'descricao_desenho': 'Descrição Materials',
+        'descricao': 'Descrição Materials',
     })
 
     writer = pd.ExcelWriter(output_path, engine = 'xlsxwriter')
@@ -324,12 +335,14 @@ def _get_view_newsteel(df_view, output_path):
         'peso_total_kg',
         'qtd_lx',
         'peso_lx',
+        'cod_ativo',
         'peso_total_materials',
         'peso_recebido',
         'data_inicio_fornecedor',
         'data_termino_fornecedor',
         'prontidao',
         'data_inicio_construcap',
+        'descricao'
     ]]
     
     df_view_cwp = pd.merge(
@@ -341,6 +354,7 @@ def _get_view_newsteel(df_view, output_path):
             'data_termino_fornecedor', 
             'prontidao', 
             'data_inicio_construcap',
+            'descricao'
         ]].drop_duplicates(subset=['cwp', 'supplier']),
         on=['cwp', 'supplier']
     )
@@ -350,6 +364,7 @@ def _get_view_newsteel(df_view, output_path):
         'tag': 'TAG',
         'supplier': 'Fornecedor',
         'peso_lx': 'Peso LX (t)',
+        'cod_ativo': 'Tag referencia',
         'peso_desenho': 'Peso Materials (t)',
         'qtd_desenho': 'Qtd. Materials',
         'peso_recebido': 'Recebido (t)',
@@ -362,12 +377,13 @@ def _get_view_newsteel(df_view, output_path):
         'tag',
         'supplier',
         'peso_lx',
+        'cod_ativo',
         'peso_un_agregado',
         'peso_desenho',
         'peso_recebido',
         'qtd_desenho',
         'qtd_recebida',
-        'descricao_desenho',
+        'descricao',
     ]].dropna(subset=['tag'])
     
     df_view_tag = df_view_tag.rename(columns={
@@ -375,12 +391,13 @@ def _get_view_newsteel(df_view, output_path):
         'tag': 'TAG',
         'supplier': 'Fornecedor',
         'peso_lx': 'Peso LX (t)',
+        'cod_ativo': 'Tag referencia',
         'peso_un_agregado': 'Peso Unitário Agregado(t)',
         'peso_desenho': 'Peso Materials (t)',
         'qtd_desenho': 'Qtd. Materials',
         'peso_recebido': 'Recebido (t)',
         'qtd_recebida': 'Qtd. Recebimento',
-        'descricao_desenho': 'Descrição Materials',
+        'descricao': 'Descrição Materials',
     })
 
     writer = pd.ExcelWriter(output_path, engine = 'xlsxwriter')

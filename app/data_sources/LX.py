@@ -106,6 +106,7 @@ class LX():
 
     def _clean_raw(self):
         df = self.df_raw
+        print(df[df["PESO UNIT(KG)"].isna()][['file_path', 'supplier']])
         df = df.rename(columns={
             'CWP': 'cwp',
             'TAG DA REFERÊNCIA': 'cod_ativo',
@@ -124,7 +125,9 @@ class LX():
         df['cwp_number'] = df['cwp'].str.split('-').str[-1]
         df['chave'] = df['cwp_number'].str.zfill(3) + '-' + df['tag']
         df.loc[df['peso_un_lx'].str.contains(',', na=False, regex=False), 'peso_un_lx'] = df['peso_un_lx'].str.replace('.', '').str.replace(',', '.')
+        print(df[["supplier", "cwp"]])
         df['peso_un_lx'] = df['peso_un_lx'].apply(lambda x: 0 if '-' in str(x) else float(x))
+        
         pd.set_option('display.max_colwidth', None)
         df['qtd_lx'] = df['qtd_lx'].astype(float)
 

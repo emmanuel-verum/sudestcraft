@@ -18,7 +18,13 @@ def newsteel():
     lx = LX(os.environ['LX_PATH_NEWSTEEL'])
     reports.clean_reports()
     
-    df_lx = lx.get_report()
+    lx._run_pipeline()
+    df_lx = lx.df_lx
+    df_error = lx.df_errors
+    print("Os seguintes arquivos não puderam ser lidos de forma correta:\n")
+    print(df_error)
+    df_error.to_excel(os.path.join(output_dir, 'erros_found.xlsx'), index=False)
+    
     df_summary = summary.get_report()
     df_masterplan = masterplan.get_report()
     df_recebimento = reports.df_recebimento
@@ -136,7 +142,13 @@ def capanema():
     df_lx_sinosteel = lx_sinosteel.df_lx   
     df_lx_sinosteel['supplier'] = 'SINOSTEEL'
 
-    df_lx = lx.get_report()
+    lx._run_pipeline()
+    df_lx = lx.df_lx
+    df_error = lx.df_errors
+    print("Os seguintes arquivos não puderam ser lidos de forma correta:\n")
+    print(df_error)
+    df_error.to_excel(os.path.join(output_dir, 'erros_found.xlsx'), index=False)
+    
     df_lx = df_lx.loc[df_lx['supplier'] != 'SINOSTEEL']
     df_lx = pd.concat([df_lx, df_lx_sinosteel])
 
@@ -233,14 +245,33 @@ def _get_view(df_cwp, df_iwp, output_path):
     df_cwp['peso_un_agregado'] = df_cwp['peso_un_lx'].fillna(df_cwp['peso_un_desenho']).fillna(df_cwp['peso_un_recebimento'])
     df_cwp['peso_total_materials'] = df_cwp['qtd_desenho'] * df_cwp['peso_un_agregado']
     df_cwp['peso_un_agregado'] = df_cwp['peso_un_agregado']/1000
+    df_cwp['qtd_total_solicitada'] = df_cwp['qtd_solicitada'] + df_cwp['qtd_solicitada_alocada']
+    df_cwp['qtd_total_entregue'] = df_cwp['qtd_entregue'] + df_cwp['qtd_entregue_alocada']
+    df_cwp['peso_solicitado'] = df_cwp['qtd_solicitada'] * df_cwp['peso_un_agregado']
+    df_cwp['peso_solicitado_alocado'] = df_cwp['qtd_solicitada_alocada'] * df_cwp['peso_un_agregado']
+    df_cwp['peso_total_solicitado'] = df_cwp['peso_solicitado'] + df_cwp['peso_solicitado_alocado']
+    df_cwp['peso_entregue'] = df_cwp['qtd_entregue'] * df_cwp['peso_un_agregado']
+    df_cwp['peso_entregue_alocado'] = df_cwp['qtd_entregue_alocada'] * df_cwp['peso_un_agregado']
+    df_cwp['peso_total_entregue'] = df_cwp['peso_entregue'] + df_cwp['peso_entregue_alocado']
+
     df_cwp.insert(13, 'prontidao', df_cwp['data_inicio_masterplan'] - pd.Timedelta(days=30))
     df_cwp.insert(3, 'peso_lx', df_cwp['qtd_lx'] * df_cwp['peso_un_agregado'] )
     df_cwp.insert(4, 'peso_desenho', df_cwp['qtd_desenho'] * df_cwp['peso_un_desenho'] /1000)
     df_cwp.insert(5, 'peso_recebido', df_cwp['qtd_recebida'] * df_cwp['peso_un_agregado'] )
 
+
     df_iwp['peso_un_agregado'] = df_iwp['peso_un_lx'].fillna(df_iwp['peso_un_desenho']).fillna(df_iwp['peso_un_recebimento'])
     df_iwp['peso_total_materials'] = df_iwp['qtd_desenho'] * df_iwp['peso_un_agregado']
     df_iwp['peso_un_agregado'] = df_iwp['peso_un_agregado']/1000
+    df_iwp['qtd_total_solicitada'] = df_iwp['qtd_solicitada'] + df_iwp['qtd_solicitada_alocada']
+    df_iwp['qtd_total_entregue'] = df_iwp['qtd_entregue'] + df_iwp['qtd_entregue_alocada']
+    df_iwp['peso_solicitado'] = df_iwp['qtd_solicitada'] * df_iwp['peso_un_agregado']
+    df_iwp['peso_solicitado_alocado'] = df_iwp['qtd_solicitada_alocada'] * df_iwp['peso_un_agregado']
+    df_iwp['peso_total_solicitado'] = df_iwp['peso_solicitado'] + df_iwp['peso_solicitado_alocado']
+    df_iwp['peso_entregue'] = df_iwp['qtd_entregue'] * df_iwp['peso_un_agregado']
+    df_iwp['peso_entregue_alocado'] = df_iwp['qtd_entregue_alocada'] * df_iwp['peso_un_agregado']
+    df_iwp['peso_total_entregue'] = df_iwp['peso_entregue'] + df_iwp['peso_entregue_alocado']
+
     df_iwp.insert(13, 'prontidao', df_iwp['data_inicio'] - pd.Timedelta(days=30))
     df_iwp.insert(3, 'peso_lx', df_iwp['qtd_lx'] * df_iwp['peso_un_agregado'] )
     df_iwp.insert(4, 'peso_desenho', df_iwp['qtd_desenho'] * df_iwp['peso_un_agregado'] )
@@ -255,6 +286,11 @@ def _get_view(df_cwp, df_iwp, output_path):
         'peso_un_agregado',
         'qtd_lx',
         'peso_lx',
+        'cod_ativo',
+        'qtd_total_solicitada',
+        'peso_total_solicitado',
+        'qtd_total_entregue',
+        'peso_total_entregue',
         'peso_total_materials',
         'peso_recebido',
         'data_inicio',
@@ -271,6 +307,11 @@ def _get_view(df_cwp, df_iwp, output_path):
         'peso_un_agregado',
         'qtd_lx',
         'peso_lx',
+        'cod_ativo',
+        'qtd_total_solicitada',
+        'peso_total_solicitado',
+        'qtd_total_entregue',
+        'peso_total_entregue',
         'peso_total_materials',
         'peso_recebido',
         'data_inicio',
@@ -341,6 +382,7 @@ def _get_view(df_cwp, df_iwp, output_path):
         'cwp': 'CWP',
         'supplier': 'Fornecedor',
         'peso_lx': 'Peso LX (t)',
+        'cod_ativo': 'Tag referencia',
         'peso_desenho': 'Peso Materials (t)',
         'peso_recebido': 'Recebido (t)',
         'peso_capex_ton_memoria_fornecedor': 'Peso PQ (t)',
@@ -353,6 +395,7 @@ def _get_view(df_cwp, df_iwp, output_path):
         'cwp': 'CWP',
         'supplier': 'Fornecedor',
         'peso_lx': 'Peso LX (t)',
+        'cod_ativo': 'Tag referencia',
         'peso_desenho': 'Peso Materials (t)',
         'peso_recebido': 'Recebido (t)',
         'data_inicio': 'Start Tendência',
@@ -389,7 +432,20 @@ def _get_view(df_cwp, df_iwp, output_path):
 
     df_view_cwp_tag = df_view_cwp_tag.rename(columns={
         'cwp': 'CWP',
-        'cod_ativo': 'Cod Ativo',
+        'cod_ativo': 'Tag referencia',
+        'tag': 'TAG',
+        'supplier': 'Fornecedor',
+        'peso_lx': 'Peso LX (t)',
+        'peso_desenho': 'Peso Materials (t)',
+        'qtd_desenho': 'Qtd. Materials',
+        'peso_recebido': 'Recebido (t)',
+        'qtd_recebida': 'Qtd. Recebimento',
+        'descricao_desenho': 'Descrição Materials',
+    })
+
+    df_view_iwp_tag = df_view_iwp_tag.rename(columns={
+        'cwp': 'CWP',
+        'cod_ativo': 'Tag referencia',
         'tag': 'TAG',
         'supplier': 'Fornecedor',
         'peso_lx': 'Peso LX (t)',

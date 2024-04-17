@@ -22,6 +22,14 @@
 #############
 .env
 
+# Files #
+#########
+app/blobteste.py
+app/ondrive.py
+app/armazem.py
+app/teste.py
+
 # Folders #
 ###########
 venv/
+app/__pycache__/

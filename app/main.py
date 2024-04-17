@@ -42,14 +42,14 @@ if __name__ == "__main__":
     # extract_ifc_data.famsteel()
     # lx_check.newsteel()
     # 
-     montagem_eletromecanica.newsteel() #Bi de mesmo nome
-     gestao_materiais.newsteel() #Bi de mesmo nome conhecido por Fornecimento
+    #  montagem_eletromecanica.newsteel() #Bi de mesmo nome
+    #  gestao_materiais.newsteel() #Bi de mesmo nome conhecido por Fornecimento
     #  bim_x_pwp.emalto() #BI dd Fornecimento
     #  bim_x_pwp.famsteel() #BI dd Fornecimento
     #  federated_model.newsteel()
 
-    #  montagem_eletromecanica.capanema() #Bi de mesmo nome
-    #  gestao_materiais.capanema() #BI de mesmo nome conhecido por Fornecimento
+     montagem_eletromecanica.capanema() #Bi de mesmo nome
+     gestao_materiais.capanema() #BI de mesmo nome conhecido por Fornecimento
     #  bim_x_pwp.codeme() #BI dd Fornecimento
     #  bim_x_pwp.sinosteel() #BI dd Fornecimento
     # todos os federados são os modelos ifc com status de entrega atrelados

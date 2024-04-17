@@ -20,7 +20,7 @@ class Reports():
                         index_col=False,
                         header=0,
                         na_values=['  #VALUE! ', '  #DIV/0! '],
-                        usecols=[' TAG/CÓDIGO ', ' QT RECEBIDA ', ' FORNECEDOR ', ' ATTR_VALUE']
+                        usecols=[' TAG/CÓDIGO ', ' QT RECEBIDA ', ' FORNECEDOR ', ' ATTR_VALUE', ' DESCRIÇÃO ']
                     )
                 if 'desenho.csv' in item.lower():
                     self.df_desenho = pd.read_csv(
@@ -87,13 +87,14 @@ class Reports():
             ' TAG/CÓDIGO ': 'tag', 
             ' QT RECEBIDA ': 'qtd_recebida', 
             ' FORNECEDOR ': 'fornecedor',
-            ' ATTR_VALUE': 'peso_un_recebimento'
+            ' ATTR_VALUE': 'peso_un_recebimento',
+            ' DESCRIÇÃO ': 'descricao'
         })
         df['tag'] = df['tag'].str.upper().str.replace(' ', '')
         df['qtd_recebida'] = df['qtd_recebida'].astype(float)
         df['peso_un_recebimento'] = df['peso_un_recebimento'].astype(float)
         df['fornecedor'] = df['fornecedor'].str.split('-').str[0].str.replace(' ', '')
-        df_categorical = df[['tag', 'fornecedor', 'peso_un_recebimento']].drop_duplicates(subset='tag' ,keep='first')
+        df_categorical = df[['tag', 'fornecedor', 'peso_un_recebimento', 'descricao']].drop_duplicates(subset='tag' ,keep='first')
         df_numerical = df[['tag', 'qtd_recebida']].groupby('tag', as_index=False).sum()
         df = pd.merge(
             df_numerical,
